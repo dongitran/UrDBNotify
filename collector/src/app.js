@@ -20,7 +20,7 @@ async function initializeLogger() {
 }
 
 async function startListeners() {
-  const loggerDb = await initializeLogger();
+  await initializeLogger();
 
   for (const pgConn of config.postgres) {
     try {

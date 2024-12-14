@@ -1,6 +1,7 @@
 const { MongoClient } = require("mongodb");
 const { sanitizeJson } = require("../utils/sanitizeJson");
 const { logDatabaseChange } = require("./mongoLogger");
+const logger = require("./logger");
 
 exports.mongoListener = async (mongoConnection) => {
   const sourceClient = new MongoClient(mongoConnection.url);
@@ -9,7 +10,10 @@ exports.mongoListener = async (mongoConnection) => {
   async function startListening() {
     try {
       await sourceClient.connect();
-      console.log(`Connected to MongoDB: ${mongoConnection.name}`);
+      logger.info(
+        "mongoListener",
+        `Connected to MongoDB: ${mongoConnection.name}`
+      );
 
       const database = sourceClient.db(mongoConnection.database);
       changeStream = database.watch();
@@ -55,41 +59,58 @@ exports.mongoListener = async (mongoConnection) => {
               break;
 
             default:
+              logger.warn(
+                "mongoListener",
+                `Unhandled operation type: ${change.operationType}`,
+                { change }
+              );
               return;
           }
 
           await logDatabaseChange(sanitizeJson(dbChange));
         } catch (error) {
-          console.error(
-            `Error handling change for ${mongoConnection.name}:`,
-            error
+          logger.error(
+            "mongoListener",
+            `Error handling change for ${mongoConnection.name}`,
+            { error: error.message, stack: error.stack },
+            { source: mongoConnection.name, database: mongoConnection.database }
           );
         }
       });
 
       changeStream.on("error", async (error) => {
-        console.error(
-          `MongoDB change stream error for ${mongoConnection.name}:`,
-          error
+        logger.error(
+          "mongoListener",
+          `Change stream error for ${mongoConnection.name}`,
+          { error: error.message, stack: error.stack },
+          { source: mongoConnection.name, database: mongoConnection.database }
         );
         await handleReconnection();
       });
 
       changeStream.on("end", async () => {
-        console.log(`Change stream ended for ${mongoConnection.name}`);
+        logger.info(
+          "mongoListener",
+          `Change stream ended for ${mongoConnection.name}`
+        );
         await handleReconnection();
       });
     } catch (error) {
-      console.error(
-        `Failed to set up MongoDB listener for ${mongoConnection.name}:`,
-        error
+      logger.error(
+        "mongoListener",
+        `Failed to set up MongoDB listener for ${mongoConnection.name}`,
+        { error: error.message, stack: error.stack },
+        { source: mongoConnection.name }
       );
       await handleReconnection();
     }
   }
 
   async function handleReconnection() {
-    console.log(`Attempting to reconnect to ${mongoConnection.name}...`);
+    logger.info(
+      "mongoListener",
+      `Attempting to reconnect to ${mongoConnection.name}`
+    );
     try {
       if (changeStream) {
         await changeStream.close();
@@ -98,9 +119,11 @@ exports.mongoListener = async (mongoConnection) => {
         await sourceClient.close();
       }
     } catch (error) {
-      console.error(
-        `Error closing connections for ${mongoConnection.name}:`,
-        error
+      logger.error(
+        "mongoListener",
+        `Error closing connections for ${mongoConnection.name}`,
+        { error: error.message, stack: error.stack },
+        { source: mongoConnection.name }
       );
     }
 
@@ -108,9 +131,11 @@ exports.mongoListener = async (mongoConnection) => {
       try {
         await startListening();
       } catch (error) {
-        console.error(
-          `Reconnection attempt failed for ${mongoConnection.name}:`,
-          error
+        logger.error(
+          "mongoListener",
+          `Reconnection attempt failed for ${mongoConnection.name}`,
+          { error: error.message, stack: error.stack },
+          { source: mongoConnection.name }
         );
         await handleReconnection();
       }
@@ -128,7 +153,12 @@ exports.mongoListener = async (mongoConnection) => {
         await sourceClient.close();
       }
     } catch (error) {
-      console.error(`Error during cleanup for ${mongoConnection.name}:`, error);
+      logger.error(
+        "mongoListener",
+        `Error during cleanup for ${mongoConnection.name}`,
+        { error: error.message, stack: error.stack },
+        { source: mongoConnection.name }
+      );
     }
   };
 };
