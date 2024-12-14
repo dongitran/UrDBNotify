@@ -31,7 +31,8 @@ async function listTablesCommand(
     }
 
     const currentSelections =
-      selections || getUserSelections(ctx.from.id, databaseType, databaseName);
+      selections ||
+      (await getUserSelections(ctx.from.id, databaseType, databaseName));
     const { keyboard, totalPages, itemsPerPage } =
       createPaginatedTablesKeyboard(
         databaseType,

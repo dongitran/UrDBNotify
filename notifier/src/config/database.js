@@ -26,6 +26,14 @@ async function setupCollections() {
   await watchRequests.createIndex({ userId: 1 });
   await watchRequests.createIndex({ database: 1, table: 1 });
   await watchRequests.createIndex({ createdAt: 1 });
+
+  const userSelections = db.collection("user_selections");
+  await userSelections.createIndex({ userId: 1 });
+  await userSelections.createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 });
+  await userSelections.createIndex(
+    { userId: 1, databaseType: 1, database: 1 },
+    { unique: true }
+  );
 }
 
 function getDb() {

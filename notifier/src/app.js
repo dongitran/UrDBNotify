@@ -2,12 +2,14 @@ require("dotenv").config();
 const { telegramBot } = require("./services/telegramBot");
 const { startNotificationService } = require("./services/notificationService");
 const { connectToMongoDB } = require("./config/database");
+const { cleanupExpiredSelections } = require("./services/userSelections");
 
 async function start() {
   try {
     await connectToMongoDB();
     await telegramBot.launch();
     startNotificationService();
+    startCleanupJob();
 
     console.log("Bot is running...");
   } catch (error) {
@@ -17,6 +19,16 @@ async function start() {
 }
 
 start();
+
+function startCleanupJob() {
+  schedule.scheduleJob("*/15 * * * *", async () => {
+    try {
+      await cleanupExpiredSelections();
+    } catch (error) {
+      console.error("Cleanup job error:", error);
+    }
+  });
+}
 
 process.once("SIGINT", () => telegramBot.stop("SIGINT"));
 process.once("SIGTERM", () => telegramBot.stop("SIGTERM"));

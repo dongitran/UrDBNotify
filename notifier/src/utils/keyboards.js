@@ -41,16 +41,15 @@ function createPaginatedTablesKeyboard(
     for (let j = 0; j < BUTTONS_PER_ROW && i + j < currentTables.length; j++) {
       const table = currentTables[i + j];
       const isSelected = selectedTables.includes(table);
-      const checkmark = isSelected ? "✅ " : "";
+      const checkMark = isSelected ? "✅ " : "";
       const shortDbType = dbType === "mongodb" ? "m" : "p";
 
       const truncatedName =
         table.length > MAX_TABLE_LENGTH
           ? table.slice(0, MAX_TABLE_LENGTH - 2) + ".."
           : table;
-      console.log(truncatedName, "truncatedName");
       const paddedName = padString(truncatedName, MAX_TABLE_LENGTH);
-      const displayName = `${paddedName}${checkmark}`;
+      const displayName = `${paddedName}${checkMark}`;
 
       rowButtons.push(
         Markup.button.callback(

@@ -39,8 +39,7 @@ bot.action(/database:(.+)/, async (ctx) => {
     const databaseName = database.split(":")[1];
     const messageId = ctx.callbackQuery.message.message_id;
 
-    clearUserSelections(ctx.from.id, databaseType, databaseName);
-
+    await clearUserSelections(ctx.from.id, databaseType, databaseName);
     await listTablesCommand(ctx, databaseType, databaseName, 1, messageId);
     await ctx.answerCbQuery();
   } catch (error) {
@@ -56,7 +55,11 @@ bot.action(/select:(.):(.+):(.+)/, async (ctx) => {
     const table = ctx.match[3];
     const messageId = ctx.callbackQuery.message.message_id;
 
-    let selections = getUserSelections(ctx.from.id, databaseType, database);
+    let selections = await getUserSelections(
+      ctx.from.id,
+      databaseType,
+      database
+    );
 
     if (selections.includes(table)) {
       selections = selections.filter((t) => t !== table);
@@ -64,8 +67,7 @@ bot.action(/select:(.):(.+):(.+)/, async (ctx) => {
       selections.push(table);
     }
 
-    setUserSelections(ctx.from.id, databaseType, database, selections);
-
+    await setUserSelections(ctx.from.id, databaseType, database, selections);
     await listTablesCommand(
       ctx,
       databaseType,
@@ -89,7 +91,11 @@ bot.action(/confirm:(.+):(.+)/, async (ctx) => {
     const database = ctx.match[2];
     const messageId = ctx.callbackQuery.message.message_id;
 
-    const selections = getUserSelections(ctx.from.id, databaseType, database);
+    const selections = await getUserSelections(
+      ctx.from.id,
+      databaseType,
+      database
+    );
     if (!selections.length) {
       return ctx.answerCbQuery("Please select at least one table");
     }
@@ -99,7 +105,6 @@ bot.action(/confirm:(.+):(.+)/, async (ctx) => {
     );
 
     await Promise.all(watchPromises);
-
     const expiresIn = 5;
 
     await ctx.telegram.editMessageText(
@@ -112,7 +117,7 @@ bot.action(/confirm:(.+):(.+)/, async (ctx) => {
         `Use /listen to watch more tables.`
     );
 
-    clearUserSelections(ctx.from.id, databaseType, database);
+    await clearUserSelections(ctx.from.id, databaseType, database);
     await ctx.answerCbQuery(`Started watching ${selections.length} tables`);
   } catch (error) {
     console.error("Confirmation error:", error);
