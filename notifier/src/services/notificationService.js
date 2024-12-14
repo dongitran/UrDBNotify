@@ -13,7 +13,6 @@ async function getActiveWatchRequestsByUser() {
       expiresAt: { $gt: now },
     })
     .toArray();
-  console.log(watchRequests, "watchRequests");
 
   const groupedRequests = watchRequests.reduce((acc, request) => {
     if (!acc[request.userId]) {
@@ -43,6 +42,51 @@ async function getRecentDatabaseChanges(database, table, timeWindow) {
     .toArray();
 }
 
+function splitMessageByLimit(messages, limit = 4000) {
+  const chunks = [];
+  let currentChunk = "";
+
+  for (const message of messages) {
+    if (
+      currentChunk.length + message.length > limit &&
+      currentChunk.length > 0
+    ) {
+      chunks.push(currentChunk);
+      currentChunk = "";
+    }
+
+    if (message.length > limit) {
+      if (currentChunk.length > 0) {
+        chunks.push(currentChunk);
+        currentChunk = "";
+      }
+
+      let remainingMessage = message;
+      while (remainingMessage.length > limit) {
+        let splitIndex = remainingMessage.lastIndexOf("\n", limit);
+        if (splitIndex === -1 || splitIndex > limit) {
+          splitIndex = limit;
+        }
+
+        chunks.push(remainingMessage.substring(0, splitIndex));
+        remainingMessage = remainingMessage.substring(splitIndex);
+      }
+
+      if (remainingMessage.length > 0) {
+        currentChunk = remainingMessage;
+      }
+    } else {
+      currentChunk += message;
+    }
+  }
+
+  if (currentChunk.length > 0) {
+    chunks.push(currentChunk);
+  }
+
+  return chunks;
+}
+
 async function processUserChanges(userId, watchedTables) {
   const TIME_WINDOW = 5000;
   let allChanges = [];
@@ -68,15 +112,16 @@ async function processUserChanges(userId, watchedTables) {
       return acc;
     }, {});
 
+    const changeMessages = [];
     for (const [location, changes] of Object.entries(groupedChanges)) {
-      let message = `🔔 Changes in ${location}\n\n`;
+      let locationMessage = `🔔 Changes in ${location}\n\n`;
 
       changes.forEach((change, index) => {
-        message += `Change ${index + 1}:\n`;
-        message += `Action: ${change.action.toUpperCase()}\n`;
+        locationMessage += `Change ${index + 1}:\n`;
+        locationMessage += `Action: ${change.action.toUpperCase()}\n`;
 
         if (change.data) {
-          message += `New Data: \`\`\`json\n${JSON.stringify(
+          locationMessage += `New Data: \`\`\`json\n${JSON.stringify(
             change.data,
             null,
             2
@@ -84,22 +129,38 @@ async function processUserChanges(userId, watchedTables) {
         }
 
         if (change.oldData) {
-          message += `Old Data: \`\`\`json\n${JSON.stringify(
+          locationMessage += `Old Data: \`\`\`json\n${JSON.stringify(
             change.oldData,
             null,
             2
           )}\n\`\`\`\n`;
         }
-
-        message += "\n";
       });
 
+      changeMessages.push(locationMessage);
+    }
+
+    const messageChunks = splitMessageByLimit(changeMessages);
+
+    for (const chunk of messageChunks) {
       try {
-        await telegramBot.telegram.sendMessage(userId, message, {
+        await telegramBot.telegram.sendMessage(userId, chunk, {
           parse_mode: "Markdown",
         });
       } catch (error) {
         console.error(`Failed to send notification to user ${userId}:`, error);
+
+        try {
+          const plainMessage = chunk
+            .replace(/```json\n/g, "")
+            .replace(/```/g, "");
+          await telegramBot.telegram.sendMessage(userId, plainMessage);
+        } catch (retryError) {
+          console.error(
+            `Failed to send plain notification to user ${userId}:`,
+            retryError
+          );
+        }
       }
     }
   }
