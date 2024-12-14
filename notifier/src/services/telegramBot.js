@@ -105,7 +105,7 @@ bot.action(/confirm:(.+):(.+)/, async (ctx) => {
     );
 
     await Promise.all(watchPromises);
-    const expiresIn = 5;
+    const expiresIn = 15;
 
     await ctx.telegram.editMessageText(
       ctx.chat.id,

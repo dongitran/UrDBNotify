@@ -1,7 +1,6 @@
 const schedule = require("node-schedule");
 const { getDb } = require("../config/database");
 const { telegramBot } = require("./telegramBot");
-const { formatChangeMessage } = require("../utils/formatters");
 
 async function getActiveWatchRequestsByUser() {
   const db = getDb();
@@ -114,14 +113,16 @@ async function processUserChanges(userId, watchedTables) {
 
     const changeMessages = [];
     for (const [location, changes] of Object.entries(groupedChanges)) {
-      let locationMessage = `🔔 Changes in ${location}\n\n`;
+      let locationMessage = "";
 
       changes.forEach((change, index) => {
-        locationMessage += `Change ${index + 1}:\n`;
-        locationMessage += `Action: ${change.action.toUpperCase()}\n`;
+        locationMessage += `${location.replace(
+          /_/g,
+          "\\_"
+        )} - ${change.action.toUpperCase()}\n`;
 
         if (change.data) {
-          locationMessage += `New Data: \`\`\`json\n${JSON.stringify(
+          locationMessage += `\`\`\`json\n${JSON.stringify(
             change.data,
             null,
             2

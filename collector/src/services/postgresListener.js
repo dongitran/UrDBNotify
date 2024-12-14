@@ -3,16 +3,48 @@ const { sanitizeJson } = require("../utils/sanitizeJson");
 const { logDatabaseChange } = require("./mongoLogger");
 const logger = require("./logger");
 
+const REMOVED_FIELDS = (
+  process.env.REMOVED_FIELDS ||
+  "secret_key,public_key,number_details,uuid,alias_number,app_public_key,address,locale,citizen_identity,deleted_at,deleted_by,alias_id,shorten_link_balance,number_details,server_payment_password,app_payment_password"
+).split(",");
+
+function removeSensitiveData(data) {
+  if (!data || typeof data !== "object") {
+    return data;
+  }
+
+  const sanitizedData = Array.isArray(data) ? [...data] : { ...data };
+
+  REMOVED_FIELDS.forEach((field) => {
+    delete sanitizedData[field.trim()];
+  });
+
+  Object.keys(sanitizedData).forEach((key) => {
+    if (typeof sanitizedData[key] === "object" && sanitizedData[key] !== null) {
+      sanitizedData[key] = removeSensitiveData(sanitizedData[key]);
+    }
+  });
+
+  return sanitizedData;
+}
+
 async function handleDatabaseChange(dbName, payload) {
   try {
+    const rawData =
+      payload.action === "update" ? payload.new_data : payload.data;
+    const sanitizedData = removeSensitiveData(rawData);
+    const sanitizedOldData = payload.old_data
+      ? removeSensitiveData(payload.old_data)
+      : undefined;
+
     const dbChange = {
       source: dbName,
       databaseType: "postgres",
       database: payload.database_name,
       table: payload.table_name,
       action: payload.action,
-      data: payload.action === "update" ? payload.new_data : payload.data,
-      oldData: payload.old_data,
+      data: sanitizedData,
+      oldData: sanitizedOldData,
       metadata: {
         databaseName: payload.database_name,
         tableName: payload.table_name,
