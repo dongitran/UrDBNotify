@@ -25,7 +25,7 @@ bot.use(async (ctx, next) => {
   return next();
 });
 
-bot.command("listdatabases", listDatabasesCommand);
+bot.command("listen", listDatabasesCommand);
 bot.command("listtables", listTablesCommand);
 
 bot.action(/database:(.+)/, async (ctx) => {
@@ -49,13 +49,14 @@ bot.action(/w:(.):(.+):(.+)/, async (ctx) => {
     const table = ctx.match[3];
     const messageId = ctx.callbackQuery.message.message_id;
 
-    await createWatchRequest(ctx.from.id, database, table);
+    const result = await createWatchRequest(ctx.from.id, database, table);
+    const expiresIn = Math.ceil((result.expiresAt - new Date()) / 1000 / 60);
 
     await ctx.telegram.editMessageText(
       ctx.chat.id,
       messageId,
       null,
-      `✅ Successfully watching ${database}.${table}\n\nUse /listdatabases to watch more tables.`
+      `✅ Now watching ${database}.${table}\nWatch will expire in ${expiresIn} minutes.\n\nUse /listen to watch more tables.`
     );
 
     await ctx.answerCbQuery(`Started watching ${database}.${table}`);

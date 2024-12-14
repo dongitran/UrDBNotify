@@ -1,6 +1,6 @@
 const schedule = require("node-schedule");
 const { getApprovedUsers } = require("../models/user");
-const { getUserWatchRequests } = require("../models/watchRequest");
+const { getActiveWatchRequests } = require("../models/watchRequest");
 const { getDb } = require("../config/database");
 const { telegramBot } = require("./telegramBot");
 const { formatChangeMessage } = require("../utils/formatters");
@@ -29,9 +29,9 @@ async function notificationJob() {
     const users = await getApprovedUsers();
 
     for (const user of users) {
-      const watchRequests = await getUserWatchRequests(user.chatId);
+      const activeRequests = await getActiveWatchRequests(user.chatId);
 
-      for (const request of watchRequests) {
+      for (const request of activeRequests) {
         await checkAndNotifyChanges(user, request);
       }
     }
