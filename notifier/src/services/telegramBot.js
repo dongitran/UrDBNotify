@@ -29,7 +29,9 @@ bot.command("listtables", listTablesCommand);
 
 bot.action(/database:(.+)/, async (ctx) => {
   const database = ctx.match[1];
-  await listTablesCommand(ctx, database);
+  const databaseType = database.split(":")[0];
+  const databaseName = database.split(":")[1];
+  await listTablesCommand(ctx, databaseType, databaseName);
 });
 
 bot.action(/watch:(.+):(.+)/, async (ctx) => {

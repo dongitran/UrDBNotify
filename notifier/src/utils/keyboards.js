@@ -13,7 +13,12 @@ function createTablesKeyboard(dbType, database, tables) {
     Markup.button.callback(table, `watch:${dbType}:${database}|${table}`)
   );
 
-  return Markup.inlineKeyboard(buttons, { columns: 1 });
+  const buttonRows = [];
+  for (let i = 0; i < buttons.length; i += 2) {
+    buttonRows.push(buttons.slice(i, i + 2));
+  }
+
+  return Markup.inlineKeyboard(buttonRows);
 }
 
 module.exports = {
