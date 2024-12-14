@@ -2,6 +2,8 @@ const { Telegraf } = require("telegraf");
 const { loginCommand } = require("../commands/loginCommand");
 const { listDatabasesCommand } = require("../commands/listDatabasesCommand");
 const { listTablesCommand } = require("../commands/listTablesCommand");
+const { startCommand } = require("../commands/startCommand");
+const { helpCommand } = require("../commands/helpCommand");
 const { isUserApproved } = require("../models/user");
 const { createWatchRequest } = require("../models/watchRequest");
 const {
@@ -12,14 +14,17 @@ const {
 
 const bot = new Telegraf(process.env.TELEGRAM_BOT_TOKEN);
 
-bot.command("start", (ctx) => {
-  ctx.reply("Welcome! Use /login to request access to the system.");
-});
-
+bot.command("start", startCommand);
+bot.command("help", helpCommand);
 bot.command("login", loginCommand);
 
 bot.use(async (ctx, next) => {
   if (ctx.message?.text?.startsWith("/")) {
+    const publicCommands = ["/start", "/help", "/login"];
+    if (publicCommands.includes(ctx.message.text.split(" ")[0])) {
+      return next();
+    }
+
     const isApproved = await isUserApproved(ctx.chat.id);
     if (!isApproved) {
       return ctx.reply(
@@ -29,7 +34,6 @@ bot.use(async (ctx, next) => {
   }
   return next();
 });
-
 bot.command("listen", listDatabasesCommand);
 
 bot.action(/database:(.+)/, async (ctx) => {
