@@ -24,7 +24,7 @@ async function startListeners() {
 
   for (const pgConn of config.postgres) {
     try {
-      await postgresListener(loggerDb, pgConn);
+      await postgresListener(pgConn);
       console.log(`PostgreSQL listener started for ${pgConn.name}`);
     } catch (error) {
       console.error(

@@ -1,7 +1,8 @@
 const { MongoClient } = require("mongodb");
 const { sanitizeJson } = require("../utils/sanitizeJson");
+const { logDatabaseChange } = require("./mongoLogger");
 
-exports.mongoListener = async (mongoDb, mongoConnection) => {
+exports.mongoListener = async (mongoConnection) => {
   const sourceClient = new MongoClient(mongoConnection.url);
   let changeStream;
 
@@ -13,12 +14,9 @@ exports.mongoListener = async (mongoDb, mongoConnection) => {
       const database = sourceClient.db(mongoConnection.database);
       changeStream = database.watch();
 
-      const changes = mongoDb.collection(process.env.MONGO_LOGGER_COLLECTION);
-
       changeStream.on("change", async (change) => {
         try {
-          const changeDoc = {
-            timestamp: new Date(),
+          const dbChange = {
             source: mongoConnection.name,
             databaseType: "mongodb",
             database: mongoConnection.database,
@@ -35,33 +33,32 @@ exports.mongoListener = async (mongoDb, mongoConnection) => {
 
           switch (change.operationType) {
             case "insert":
-              changeDoc.data = change.fullDocument;
+              dbChange.data = change.fullDocument;
               break;
 
             case "update":
-              changeDoc.data = {
+              dbChange.data = {
                 _id: change.documentKey._id,
                 ...change.updateDescription.updatedFields,
               };
-              changeDoc.oldData = change.updateDescription.removedFields
+              dbChange.oldData = change.updateDescription.removedFields
                 ? { removedFields: change.updateDescription.removedFields }
                 : null;
               break;
 
             case "replace":
-              changeDoc.data = change.fullDocument;
+              dbChange.data = change.fullDocument;
               break;
 
             case "delete":
-              changeDoc.data = change.documentKey;
+              dbChange.data = change.documentKey;
               break;
 
             default:
-              console.log(`Unhandled operation type: ${change.operationType}`);
               return;
           }
 
-          await changes.insertOne(sanitizeJson(changeDoc));
+          await logDatabaseChange(sanitizeJson(dbChange));
         } catch (error) {
           console.error(
             `Error handling change for ${mongoConnection.name}:`,

@@ -1,11 +1,10 @@
 const { Client } = require("pg");
 const { sanitizeJson } = require("../utils/sanitizeJson");
+const { logDatabaseChange } = require("./mongoLogger");
 
-async function handleDatabaseChange(mongoDb, dbName, payload) {
-  const changes = mongoDb.collection(process.env.MONGO_LOGGER_COLLECTION);
-
-  const change = {
-    timestamp: new Date(),
+async function handleDatabaseChange(dbName, payload) {
+  console.log(payload, "payloadpayload");
+  const dbChange = {
     source: dbName,
     databaseType: "postgres",
     database: payload.database_name,
@@ -20,10 +19,12 @@ async function handleDatabaseChange(mongoDb, dbName, payload) {
     },
   };
 
-  await changes.insertOne(sanitizeJson(change));
+  console.log(dbChange, "dbChangedbChange");
+
+  await logDatabaseChange(sanitizeJson(dbChange));
 }
 
-exports.postgresListener = async (mongoDb, pgConnection) => {
+exports.postgresListener = async (pgConnection) => {
   const client = new Client(pgConnection.config);
 
   try {
@@ -35,7 +36,7 @@ exports.postgresListener = async (mongoDb, pgConnection) => {
     client.on("notification", async (msg) => {
       try {
         const payload = JSON.parse(msg.payload);
-        await handleDatabaseChange(mongoDb, pgConnection.name, payload);
+        await handleDatabaseChange(pgConnection.name, payload);
       } catch (error) {
         console.error(
           `Error handling notification for ${pgConnection.name}:`,
@@ -46,11 +47,10 @@ exports.postgresListener = async (mongoDb, pgConnection) => {
 
     client.on("error", (err) => {
       console.error(`PostgreSQL client error for ${pgConnection.name}:`, err);
-      // Attempt to reconnect
       setTimeout(async () => {
         try {
           await client.end();
-          await exports.postgresListener(mongoDb, pgConnection);
+          await exports.postgresListener(pgConnection);
         } catch (error) {
           console.error(`Failed to reconnect to ${pgConnection.name}:`, error);
         }
