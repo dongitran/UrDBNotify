@@ -1,84 +1,15 @@
 const { MongoClient } = require("mongodb");
 const { Client } = require("pg");
-const { Markup } = require("telegraf");
-
-function createPaginatedTablesKeyboard(dbType, database, tables, page = 1) {
-  const BUTTONS_PER_ROW = 2;
-  const MAX_ROWS = 20;
-  const PAGE_SIZE = BUTTONS_PER_ROW * MAX_ROWS;
-
-  const start = (page - 1) * PAGE_SIZE;
-  const end = start + PAGE_SIZE;
-  const currentTables = tables.slice(start, end);
-
-  const buttonRows = [];
-
-  for (let i = 0; i < currentTables.length; i += BUTTONS_PER_ROW) {
-    const rowButtons = [];
-
-    if (i < currentTables.length) {
-      const table1 = currentTables[i];
-      const shortDbType = dbType === "mongodb" ? "m" : "p";
-      const displayName = `${table1.slice(0, 40)}`;
-
-      rowButtons.push(
-        Markup.button.callback(
-          displayName,
-          `w:${shortDbType}:${database}:${table1}`.slice(0, 64)
-        )
-      );
-    }
-
-    if (i + 1 < currentTables.length) {
-      const table2 = currentTables[i + 1];
-      const shortDbType = dbType === "mongodb" ? "m" : "p";
-      const displayName = `${table2.slice(0, 40)}`;
-
-      rowButtons.push(
-        Markup.button.callback(
-          displayName,
-          `w:${shortDbType}:${database}:${table2}`.slice(0, 64)
-        )
-      );
-    }
-
-    buttonRows.push(rowButtons);
-  }
-
-  const totalPages = Math.ceil(tables.length / PAGE_SIZE);
-  const navigationRow = [];
-
-  if (page > 1) {
-    navigationRow.push(
-      Markup.button.callback("⬅️", `page:${dbType}:${database}:${page - 1}`)
-    );
-  }
-
-  navigationRow.push(
-    Markup.button.callback(`${page}/${totalPages}`, `current:${page}`)
-  );
-
-  if (page < totalPages) {
-    navigationRow.push(
-      Markup.button.callback("➡️", `page:${dbType}:${database}:${page + 1}`)
-    );
-  }
-
-  buttonRows.push(navigationRow);
-
-  return {
-    keyboard: Markup.inlineKeyboard(buttonRows),
-    totalPages,
-    itemsPerPage: PAGE_SIZE,
-  };
-}
+const { createPaginatedTablesKeyboard } = require("../utils/keyboards");
+const { getUserSelections } = require("../services/userSelections");
 
 async function listTablesCommand(
   ctx,
   databaseType,
   databaseName,
   page = 1,
-  messageToEdit = null
+  messageToEdit = null,
+  selections = null
 ) {
   try {
     const config = getDatabaseConfig(databaseType, databaseName);
@@ -99,10 +30,18 @@ async function listTablesCommand(
       return ctx.reply(`No tables/collections found in ${databaseName}`);
     }
 
+    const currentSelections =
+      selections || getUserSelections(ctx.from.id, databaseType, databaseName);
     const { keyboard, totalPages, itemsPerPage } =
-      createPaginatedTablesKeyboard(databaseType, databaseName, tables, page);
+      createPaginatedTablesKeyboard(
+        databaseType,
+        databaseName,
+        tables,
+        currentSelections,
+        page
+      );
 
-    const text = 'Select table:';
+    const text = "Select tables to watch:";
 
     if (messageToEdit) {
       return ctx.telegram.editMessageText(

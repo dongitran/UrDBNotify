@@ -4,6 +4,11 @@ const { listDatabasesCommand } = require("../commands/listDatabasesCommand");
 const { listTablesCommand } = require("../commands/listTablesCommand");
 const { isUserApproved } = require("../models/user");
 const { createWatchRequest } = require("../models/watchRequest");
+const {
+  getUserSelections,
+  setUserSelections,
+  clearUserSelections,
+} = require("./userSelections");
 
 const bot = new Telegraf(process.env.TELEGRAM_BOT_TOKEN);
 
@@ -26,7 +31,6 @@ bot.use(async (ctx, next) => {
 });
 
 bot.command("listen", listDatabasesCommand);
-bot.command("listtables", listTablesCommand);
 
 bot.action(/database:(.+)/, async (ctx) => {
   try {
@@ -34,6 +38,8 @@ bot.action(/database:(.+)/, async (ctx) => {
     const databaseType = database.split(":")[0];
     const databaseName = database.split(":")[1];
     const messageId = ctx.callbackQuery.message.message_id;
+
+    clearUserSelections(ctx.from.id, databaseType, databaseName);
 
     await listTablesCommand(ctx, databaseType, databaseName, 1, messageId);
     await ctx.answerCbQuery();
@@ -43,25 +49,73 @@ bot.action(/database:(.+)/, async (ctx) => {
   }
 });
 
-bot.action(/w:(.):(.+):(.+)/, async (ctx) => {
+bot.action(/select:(.):(.+):(.+)/, async (ctx) => {
   try {
+    const databaseType = ctx.match[1] === "m" ? "mongodb" : "postgres";
     const database = ctx.match[2];
     const table = ctx.match[3];
     const messageId = ctx.callbackQuery.message.message_id;
 
-    const result = await createWatchRequest(ctx.from.id, database, table);
-    const expiresIn = Math.ceil((result.expiresAt - new Date()) / 1000 / 60);
+    let selections = getUserSelections(ctx.from.id, databaseType, database);
+
+    if (selections.includes(table)) {
+      selections = selections.filter((t) => t !== table);
+    } else {
+      selections.push(table);
+    }
+
+    setUserSelections(ctx.from.id, databaseType, database, selections);
+
+    await listTablesCommand(
+      ctx,
+      databaseType,
+      database,
+      1,
+      messageId,
+      selections
+    );
+    await ctx.answerCbQuery(
+      selections.includes(table) ? "Selected" : "Unselected"
+    );
+  } catch (error) {
+    console.error("Selection error:", error);
+    await ctx.answerCbQuery("Error updating selection");
+  }
+});
+
+bot.action(/confirm:(.+):(.+)/, async (ctx) => {
+  try {
+    const databaseType = ctx.match[1];
+    const database = ctx.match[2];
+    const messageId = ctx.callbackQuery.message.message_id;
+
+    const selections = getUserSelections(ctx.from.id, databaseType, database);
+    if (!selections.length) {
+      return ctx.answerCbQuery("Please select at least one table");
+    }
+
+    const watchPromises = selections.map((table) =>
+      createWatchRequest(ctx.from.id, database, table)
+    );
+
+    await Promise.all(watchPromises);
+
+    const expiresIn = 5;
 
     await ctx.telegram.editMessageText(
       ctx.chat.id,
       messageId,
       null,
-      `✅ Now watching ${database}.${table}\nWatch will expire in ${expiresIn} minutes.\n\nUse /listen to watch more tables.`
+      `✅ Now watching ${selections.length} tables in ${database}:\n` +
+        `${selections.join("\n")}\n\n` +
+        `Watch will expire in ${expiresIn} minutes.\n\n` +
+        `Use /listen to watch more tables.`
     );
 
-    await ctx.answerCbQuery(`Started watching ${database}.${table}`);
+    clearUserSelections(ctx.from.id, databaseType, database);
+    await ctx.answerCbQuery(`Started watching ${selections.length} tables`);
   } catch (error) {
-    console.error("Watch error:", error);
+    console.error("Confirmation error:", error);
     await ctx.answerCbQuery("Error setting up watch");
   }
 });
@@ -73,7 +127,19 @@ bot.action(/page:(.+):(.+):(\d+)/, async (ctx) => {
     const databaseName = ctx.match[2];
     const page = parseInt(ctx.match[3]);
 
-    await listTablesCommand(ctx, databaseType, databaseName, page, messageId);
+    const selections = getUserSelections(
+      ctx.from.id,
+      databaseType,
+      databaseName
+    );
+    await listTablesCommand(
+      ctx,
+      databaseType,
+      databaseName,
+      page,
+      messageId,
+      selections
+    );
     await ctx.answerCbQuery();
   } catch (error) {
     console.error("Navigation error:", error);
