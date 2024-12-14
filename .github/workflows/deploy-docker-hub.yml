@@ -3,7 +3,7 @@ name: Deploy Collector
 on:
   push:
     branches:
-      - develop
+      - deploy-collector
 
 jobs:
   send-notification-started:
