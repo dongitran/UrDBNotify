@@ -13,7 +13,7 @@ To get started:
 2. Wait for admin approval
 3. Use /listen to select databases and tables to monitor
 
-Need help? Use /help for more information.`;
+❓ Need help? Contact @dongtranthien for support.`;
 
   await ctx.reply(message);
 }

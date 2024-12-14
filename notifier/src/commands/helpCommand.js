@@ -25,7 +25,7 @@ Notes:
 • Use /listen again to watch different tables
 • Messages are formatted in Markdown for better readability
 
-For technical support, please contact your system administrator.`;
+❓ Need help? Contact @dongtranthien for support.`;
 
   await ctx.reply(message);
 }
