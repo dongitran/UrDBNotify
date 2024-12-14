@@ -10,7 +10,6 @@ function createDatabasesKeyboard(databases) {
 
 function padString(str, length) {
   const visibleLength = [...str].length;
-  console.log(visibleLength, "visibleLength");
   const padding = length - visibleLength;
   if (padding <= 0) return str;
   return str;
