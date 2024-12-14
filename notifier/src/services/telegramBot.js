@@ -40,6 +40,35 @@ bot.action(/watch:(.+):(.+)/, async (ctx) => {
   await ctx.reply(`You are now watching ${database}.${table}`);
 });
 
+bot.action(/page:(.+):(.+):(\d+)/, async (ctx) => {
+  try {
+    const messageId = ctx.callbackQuery.message.message_id;
+    const databaseType = ctx.match[1];
+    const databaseName = ctx.match[2];
+    const page = parseInt(ctx.match[3]);
+
+    await listTablesCommand(ctx, databaseType, databaseName, page, messageId);
+
+    await ctx.answerCbQuery();
+  } catch (error) {
+    console.error("Navigation error:", error);
+    await ctx.answerCbQuery("Error navigating pages");
+  }
+});
+
+bot.action(/w:(.):(.+):(.+)/, async (ctx) => {
+  try {
+    const database = ctx.match[2];
+    const table = ctx.match[3];
+    await createWatchRequest(ctx.from.id, database, table);
+    await ctx.answerCbQuery(`Started watching ${database}.${table}`);
+    await ctx.reply(`You are now watching ${database}.${table}`);
+  } catch (error) {
+    console.error("Watch error:", error);
+    await ctx.answerCbQuery("Error setting up watch");
+  }
+});
+
 module.exports = {
   telegramBot: bot,
 };
