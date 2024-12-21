@@ -136,7 +136,7 @@ bot.action(/page:(.+):(.+):(\d+)/, async (ctx) => {
     const databaseName = ctx.match[2];
     const page = parseInt(ctx.match[3]);
 
-    const selections = getUserSelections(
+    const selections = await getUserSelections(
       ctx.from.id,
       databaseType,
       databaseName
