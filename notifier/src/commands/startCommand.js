@@ -8,11 +8,12 @@ Available commands:
 /help - Show this help message
 /listen - Start watching database tables
 /watches - View and manage your active watches
+/template - Quick setup with predefined table groups
 
 To get started:
 1. Use /login to request access
 2. Wait for admin approval
-3. Use /listen to select databases and tables to monitor
+3. Use /listen or /template to start monitoring
 
 ❓ Need help? Contact @dongtranthien for support.`;
 
