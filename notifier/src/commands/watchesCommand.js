@@ -37,6 +37,7 @@ async function deactivateWatch(userId, database, table) {
       database,
       table,
       status: "active",
+      expiresAt: { $gt: new Date() },
     },
     {
       $set: {
