@@ -30,6 +30,7 @@ async function getActiveWatchRequests(userId) {
   return await watchRequests
     .find({
       userId,
+      status: "active",
       expiresAt: { $gt: now },
     })
     .toArray();
