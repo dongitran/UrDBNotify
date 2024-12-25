@@ -36,7 +36,7 @@ async function startListeners() {
 
   for (const mongoConn of config.mongodb) {
     try {
-      //await mongoListener(loggerDb, mongoConn);
+      await mongoListener(mongoConn);
       console.log(`MongoDB listener started for ${mongoConn.name}`);
     } catch (error) {
       console.error(

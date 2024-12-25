@@ -3,7 +3,7 @@ name: Deploy Collector
 on:
   push:
     branches:
-      - develop
+      - deploy-collector
 
 jobs:
   send-notification-started:
@@ -17,7 +17,7 @@ jobs:
           format: markdown
           disable_web_page_preview: true
           message: |
-            *🚀 UrDatabase Notify * 🏃‍♂️${{ github.run_number }}
+            *🚀 UrDatabase Notify - Collector * 🏃‍♂️${{ github.run_number }}
 
             *👤 Committer:* [${{ github.actor }}](https://github.com/${{ github.actor }})
             *📝 Commit message:* ${{ github.event.commits[0].message }}
@@ -32,16 +32,6 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v2
-        with:
-          node-version: '14'
-
-      - name: Install dependencies and build
-        run: |
-          npm install
-          npm run build
 
       - name: Login to Docker Hub
         uses: docker/login-action@v1
@@ -91,7 +81,7 @@ jobs:
           format: markdown
           disable_web_page_preview: true
           message: |
-            *🎉 UrDatabase Notify * 🏃‍♂️${{ github.run_number }}
+            *🎉 UrDatabase Notify - Collector * 🏃‍♂️${{ github.run_number }}
             
             *👤 Committer:* [${{ github.actor }}](https://github.com/${{ github.actor }})
             *📝 Commit message:* ${{ github.event.commits[0].message }}
@@ -114,7 +104,7 @@ jobs:
           format: markdown
           disable_web_page_preview: true
           message: |
-            *❌ UrDatabase Notify * 🏃‍♂️${{ github.run_number }}
+            *❌ UrDatabase Notify - Collector * 🏃‍♂️${{ github.run_number }}
             
             *👤 Committer:* [${{ github.actor }}](https://github.com/${{ github.actor }})
             *📝 Commit message:* ${{ github.event.commits[0].message }}
