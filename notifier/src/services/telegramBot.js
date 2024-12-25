@@ -11,6 +11,10 @@ const {
   setUserSelections,
   clearUserSelections,
 } = require("./userSelections");
+const {
+  watchesCommand,
+  deactivateWatch,
+} = require("../commands/watchesCommand");
 
 const bot = new Telegraf(process.env.TELEGRAM_BOT_TOKEN);
 
@@ -35,6 +39,22 @@ bot.use(async (ctx, next) => {
   return next();
 });
 bot.command("listen", listDatabasesCommand);
+bot.command("watches", watchesCommand);
+bot.action(/unwatch:(.+):(.+)/, async (ctx) => {
+  try {
+    const database = ctx.match[1];
+    const table = ctx.match[2];
+    const userId = ctx.from.id;
+
+    await deactivateWatch(userId, database, table);
+    await ctx.deleteMessage();
+    await watchesCommand(ctx);
+    await ctx.answerCbQuery(`Stopped watching ${database}-${table}`);
+  } catch (error) {
+    console.error("Unwatch error:", error);
+    await ctx.answerCbQuery("Error stopping watch");
+  }
+});
 
 bot.action(/database:(.+)/, async (ctx) => {
   try {

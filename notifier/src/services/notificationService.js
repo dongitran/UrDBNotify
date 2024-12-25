@@ -9,6 +9,7 @@ async function getActiveWatchRequestsByUser() {
   const watchRequests = await db
     .collection("watch_requests")
     .find({
+      status: "active",
       expiresAt: { $gt: now },
     })
     .toArray();
