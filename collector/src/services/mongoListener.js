@@ -24,25 +24,28 @@ exports.mongoListener = async (mongoConnection) => {
             source: mongoConnection.name,
             databaseType: "mongodb",
             database: mongoConnection.database,
-            collection: change.ns.coll,
+            table: change.ns.coll,
             action: change.operationType,
             data: null,
             oldData: null,
             metadata: {
               databaseName: mongoConnection.database,
               collectionName: change.ns.coll,
-              documentId: change.documentKey._id,
+              documentId: String(change.documentKey?._id),
             },
           };
 
           switch (change.operationType) {
             case "insert":
-              dbChange.data = change.fullDocument;
+              dbChange.data = {
+                ...change.fullDocument,
+                _id: String(change.fullDocument?._id),
+              };
               break;
 
             case "update":
               dbChange.data = {
-                _id: change.documentKey._id,
+                _id: String(change.documentKey?._id),
                 ...change.updateDescription.updatedFields,
               };
               dbChange.oldData = change.updateDescription.removedFields
@@ -51,11 +54,17 @@ exports.mongoListener = async (mongoConnection) => {
               break;
 
             case "replace":
-              dbChange.data = change.fullDocument;
+              dbChange.data = {
+                ...change.fullDocument,
+                _id: String(change.fullDocument?._id),
+              };
               break;
 
             case "delete":
-              dbChange.data = change.documentKey;
+              dbChange.data = {
+                ...change.documentKey,
+                _id: String(change.documentKey?._id),
+              };
               break;
 
             default:
