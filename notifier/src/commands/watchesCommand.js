@@ -1,3 +1,4 @@
+const { ObjectId } = require("mongodb");
 const { getActiveWatchRequests } = require("../models/watchRequest");
 const { Markup } = require("telegraf");
 const { getDb } = require("../config/database");
@@ -13,29 +14,26 @@ async function watchesCommand(ctx) {
 
     const buttons = activeWatches.map((watch) => {
       const label = `${watch.database}-${watch.table}`;
-      return [
-        Markup.button.callback(
-          `❌ ${label}`,
-          `unwatch:${watch.database}:${watch.table}`
-        ),
-      ];
+      return [Markup.button.callback(`❌ ${label}`, `unwatch:${watch._id}`)];
     });
 
     const keyboard = Markup.inlineKeyboard(buttons);
-    await ctx.reply("📊 Your active watches (click to unwatch):", keyboard);
+    await ctx.reply(
+      "📊 Your active watches ---------------(click to unwatch):",
+      keyboard
+    );
   } catch (error) {
     console.error("Watches command error:", error);
     ctx.reply("Error fetching your watched tables. Please try again later.");
   }
 }
 
-async function deactivateWatch(userId, database, table) {
+async function deactivateWatch(userId, _id) {
   const watchRequests = getDb().collection("watch_requests");
   await watchRequests.updateOne(
     {
       userId,
-      database,
-      table,
+      _id: new ObjectId(_id),
       status: "active",
       expiresAt: { $gt: new Date() },
     },

@@ -44,16 +44,15 @@ bot.use(async (ctx, next) => {
 });
 bot.command("listen", listDatabasesCommand);
 bot.command("watches", watchesCommand);
-bot.action(/unwatch:(.+):(.+)/, async (ctx) => {
+bot.action(/unwatch:(.+)/, async (ctx) => {
   try {
-    const database = ctx.match[1];
-    const table = ctx.match[2];
+    const _id = ctx.match[1];
     const userId = ctx.from.id;
 
-    await deactivateWatch(userId, database, table);
+    await deactivateWatch(userId, _id);
     await ctx.deleteMessage();
     await watchesCommand(ctx);
-    await ctx.answerCbQuery(`Stopped watching ${database}-${table}`);
+    await ctx.answerCbQuery(`Stopped watching`);
   } catch (error) {
     console.error("Unwatch error:", error);
     await ctx.answerCbQuery("Error stopping watch");
