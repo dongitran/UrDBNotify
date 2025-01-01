@@ -3,7 +3,7 @@ const { getDb } = require("../config/database");
 async function createWatchRequest(userId, database, table) {
   const watchRequests = getDb().collection("watch_requests");
   const now = new Date();
-  const expiresAt = new Date(now.getTime() + 15 * 60 * 1000);
+  const expiresAt = new Date(now.getTime() + 240 * 60 * 1000);
 
   try {
     await watchRequests.updateOne(
@@ -30,6 +30,7 @@ async function getActiveWatchRequests(userId) {
   return await watchRequests
     .find({
       userId,
+      status: "active",
       expiresAt: { $gt: now },
     })
     .toArray();

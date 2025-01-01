@@ -12,6 +12,11 @@ const {
   clearUserSelections,
 } = require("./userSelections");
 
+const {
+  watchesCommand,
+  deactivateWatch,
+} = require("../commands/watchesCommand");
+
 const bot = new Telegraf(process.env.TELEGRAM_BOT_TOKEN);
 
 bot.command("start", startCommand);
@@ -33,6 +38,23 @@ bot.use(async (ctx, next) => {
     }
   }
   return next();
+});
+bot.command("listen", listMethodsCommand);
+bot.command("watches", watchesCommand);
+bot.action(/unwatch:(.+):(.+)/, async (ctx) => {
+  try {
+    const database = ctx.match[1];
+    const table = ctx.match[2];
+    const userId = ctx.from.id;
+
+    await deactivateWatch(userId, database, table);
+    await ctx.deleteMessage();
+    await watchesCommand(ctx);
+    await ctx.answerCbQuery(`Stopped watching ${database}-${table}`);
+  } catch (error) {
+    console.error("Unwatch error:", error);
+    await ctx.answerCbQuery("Error stopping watch");
+  }
 });
 bot.use(session());
 
@@ -111,7 +133,7 @@ bot.action(/confirm:(.+):(.+)/, async (ctx) => {
     );
 
     await Promise.all(watchPromises);
-    const expiresIn = 15;
+    const expiresIn = 240; // 4 hours
 
     await ctx.telegram.editMessageText(
       ctx.chat.id,
@@ -169,6 +191,7 @@ bot.action(/method:(.+)/, async (ctx) => {
       await ctx.answerCbQuery("Error selecting method");
     }
 });
+
 module.exports = {
   telegramBot: bot,
 };

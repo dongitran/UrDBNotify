@@ -7,6 +7,7 @@ Available commands:
 /login - Request access to the system
 /help - Show this help message
 /listen - Start watching database tables
+/watches - View and manage your active watches
 
 To get started:
 1. Use /login to request access
