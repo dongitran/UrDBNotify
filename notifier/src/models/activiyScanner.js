@@ -7,8 +7,6 @@ async function getActivatedDatabases() {
         { $project: { _id: 0, database: "$_id", type: 1 } }
     ]).toArray();
 
-    console.log(databases);
-
     return databases;
 }
 
