@@ -1,6 +1,6 @@
-const { Telegraf } = require("telegraf");
+const { Telegraf, session} = require("telegraf");
 const { loginCommand } = require("../commands/loginCommand");
-const { listDatabasesCommand } = require("../commands/listDatabasesCommand");
+const { listDatabasesCommand, listMethodsCommand} = require("../commands/listDatabasesCommand");
 const { listTablesCommand } = require("../commands/listTablesCommand");
 const { startCommand } = require("../commands/startCommand");
 const { helpCommand } = require("../commands/helpCommand");
@@ -11,6 +11,7 @@ const {
   setUserSelections,
   clearUserSelections,
 } = require("./userSelections");
+
 const {
   watchesCommand,
   deactivateWatch,
@@ -38,7 +39,7 @@ bot.use(async (ctx, next) => {
   }
   return next();
 });
-bot.command("listen", listDatabasesCommand);
+bot.command("listen", listMethodsCommand);
 bot.command("watches", watchesCommand);
 bot.action(/unwatch:(.+)/, async (ctx) => {
   try {
@@ -54,6 +55,9 @@ bot.action(/unwatch:(.+)/, async (ctx) => {
     await ctx.answerCbQuery("Error stopping watch");
   }
 });
+bot.use(session());
+
+bot.command("listen", listMethodsCommand);
 
 bot.action(/database:(.+)/, async (ctx) => {
   try {
@@ -155,7 +159,7 @@ bot.action(/page:(.+):(.+):(\d+)/, async (ctx) => {
     const databaseName = ctx.match[2];
     const page = parseInt(ctx.match[3]);
 
-    const selections = getUserSelections(
+    const selections = await getUserSelections(
       ctx.from.id,
       databaseType,
       databaseName
@@ -173,6 +177,18 @@ bot.action(/page:(.+):(.+):(\d+)/, async (ctx) => {
     console.error("Navigation error:", error);
     await ctx.answerCbQuery("Error navigating pages");
   }
+});
+
+bot.action(/method:(.+)/, async (ctx) => {
+    ctx.session = { method: ctx.match[1] };
+
+    try {
+      const messageToEdit = ctx.callbackQuery.message.message_id;
+      await listDatabasesCommand(ctx,  messageToEdit);
+    } catch (error) {
+      console.error("Method selection error:", error);
+      await ctx.answerCbQuery("Error selecting method");
+    }
 });
 
 module.exports = {

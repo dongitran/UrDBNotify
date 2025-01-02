@@ -1,4 +1,5 @@
-const { createDatabasesKeyboard } = require("../utils/keyboards");
+const { createDatabasesKeyboard, createMethodsKeyboard} = require("../utils/keyboards");
+const {getActivatedDatabases} = require("../models/activiyScanner");
 
 function parseConnections() {
   const databases = [];
@@ -30,20 +31,53 @@ function parseConnections() {
   return databases;
 }
 
-async function listDatabasesCommand(ctx) {
+async function listDatabasesCommand(ctx, messageToEdit = null) {
+  const method = ctx.match[1];
+
+  let databases = [];
   try {
-    const databases = parseConnections();
+    switch (method) {
+      case "normal":
+        databases = parseConnections();
+        break;
+      case "smart":
+        databases = await getActivatedDatabases();
+        break;
+      default:
+        return ctx.reply("Invalid method selected.");
+    }
 
     if (databases.length === 0) {
       return ctx.reply("No databases are configured for monitoring.");
     }
 
     const keyboard = createDatabasesKeyboard(databases);
-    await ctx.reply("Select a database to watch:", keyboard);
+    const text = "Select a database to watch:";
+
+    if (messageToEdit) {
+      return ctx.telegram.editMessageText(
+        ctx.chat.id,
+        messageToEdit,
+        null,
+        text,
+        keyboard
+      );
+    }
+
+    await ctx.reply(text, keyboard);
   } catch (error) {
     console.error("List databases error:", error);
     ctx.reply("Error fetching databases. Please try again later.");
   }
 }
 
-module.exports = { listDatabasesCommand };
+async function listMethodsCommand(ctx) {
+     const keyboard = createMethodsKeyboard([
+       { name: "Normal list", key: "normal" },
+       { name: "Smart list", key: "smart" },
+     ]);
+
+    await ctx.reply("Select a method to watch:", keyboard);
+}
+
+module.exports = { listMethodsCommand, listDatabasesCommand };
