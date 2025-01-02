@@ -46,7 +46,7 @@ jobs:
         run: |
           docker buildx create --name builder --use
           docker buildx inspect builder --bootstrap
-          docker buildx build -t ideavn/urdbnotify-notifier:latest --push ./notifier/.
+          docker buildx build --platform linux/arm64 -t ideavn/urdbnotify-notifier:latest --push ./notifier/.
       
       - name: Remote ssh to pull and run docker
         env:
@@ -55,18 +55,18 @@ jobs:
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER_NAME }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          password: ${{ secrets.SSH_PASSWORD_MAC }}
           port: ${{ secrets.SSH_PORT }}
           envs: ENV_FILE_CONTENT_NOTIFIER
           script: |
             whoami
             echo "$ENV_FILE_CONTENT_NOTIFIER" > /tmp/.env
-            docker stop urdbnotify-notifier
-            docker rm urdbnotify-notifier
-            docker pull ideavn/urdbnotify-notifier
-            docker run -d --name urdbnotify-notifier --env-file /tmp/.env --restart always ideavn/urdbnotify-notifier
+            /usr/local/bin/docker stop urdbnotify-notifier
+            /usr/local/bin/docker rm urdbnotify-notifier
+            /usr/local/bin/docker pull ideavn/urdbnotify-notifier
+            /usr/local/bin/docker run -d --name urdbnotify-notifier --env-file /tmp/.env --restart always ideavn/urdbnotify-notifier
             rm -rf /tmp/.env
-            docker image prune -a -f
+            /usr/local/bin/docker image prune -a -f
 
   send-notification-successful:
     needs: build
