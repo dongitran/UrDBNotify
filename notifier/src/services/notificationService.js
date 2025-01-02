@@ -9,6 +9,7 @@ async function getActiveWatchRequestsByUser() {
   const watchRequests = await db
     .collection("watch_requests")
     .find({
+      status: "active",
       expiresAt: { $gt: now },
     })
     .toArray();
@@ -129,6 +130,7 @@ async function processUserChanges(userId, watchedTables) {
           )}\n\`\`\`\n`;
         }
 
+        /*
         if (change.oldData) {
           locationMessage += `Old Data: \`\`\`json\n${JSON.stringify(
             change.oldData,
@@ -136,6 +138,7 @@ async function processUserChanges(userId, watchedTables) {
             2
           )}\n\`\`\`\n`;
         }
+        */
       });
 
       changeMessages.push(locationMessage);
