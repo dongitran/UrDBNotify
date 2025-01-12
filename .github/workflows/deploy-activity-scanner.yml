@@ -62,12 +62,12 @@ jobs:
           script: |
             whoami
             echo "$ENV_FILE_CONTENT_ACTIVITY_SCANNER" > /tmp/.env
-            docker stop urdbnotify-activity-scanner
-            docker rm urdbnotify-activity-scanner
-            docker pull ideavn/urdbnotify-activity-scanner
-            docker run -d --name urdbnotify-activity-scanner --env-file /tmp/.env --restart always ideavn/urdbnotify-activity-scanner
+            /usr/local/bin/docker stop urdbnotify-activity-scanner
+            /usr/local/bin/docker rm urdbnotify-activity-scanner
+            /usr/local/bin/docker pull ideavn/urdbnotify-activity-scanner
+            /usr/local/bin/docker run -d --name urdbnotify-activity-scanner --env-file /tmp/.env --restart always ideavn/urdbnotify-activity-scanner
             rm -rf /tmp/.env
-            docker image prune -a -f
+            /usr/local/bin/docker image prune -a -f
 
   send-notification-successful:
     needs: build
