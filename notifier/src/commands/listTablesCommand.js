@@ -2,6 +2,7 @@ const { MongoClient } = require("mongodb");
 const { Client } = require("pg");
 const { createPaginatedTablesKeyboard } = require("../utils/keyboards");
 const { getUserSelections } = require("../services/userSelections");
+const {getTables, getActivatedTables} = require("../models/activiyScanner");
 
 async function listTablesCommand(
   ctx,
@@ -11,19 +12,30 @@ async function listTablesCommand(
   messageToEdit = null,
   selections = null
 ) {
+  const method = ctx.session.method;
+  let tables;
   try {
-    const config = getDatabaseConfig(databaseType, databaseName);
-    if (!config) {
-      return ctx.reply(`Database configuration not found for ${databaseName}`);
-    }
+    switch (method) {
+      case "normal":
+        const config = getDatabaseConfig(databaseType, databaseName);
 
-    let tables;
-    if (databaseType === "mongodb") {
-      tables = await getMongoCollections(config);
-    } else if (databaseType === "postgres") {
-      tables = await getPostgresTables(config);
-    } else {
-      return ctx.reply("Unsupported database type");
+        if (!config) {
+          return ctx.reply(`Database configuration not found for ${databaseName}`);
+        }
+
+        if (databaseType === "mongodb") {
+          tables = await getMongoCollections(config);
+        } else if (databaseType === "postgres") {
+          tables = await getPostgresTables(config);
+        } else {
+          return ctx.reply("Unsupported database type");
+        }
+        break;
+      case "smart":
+        tables = await getActivatedTables(databaseName);
+        break;
+      default:
+        return ctx.reply("Invalid method selected.");
     }
 
     if (!tables || tables.length === 0) {

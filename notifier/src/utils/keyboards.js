@@ -1,5 +1,13 @@
 const { Markup } = require("telegraf");
 
+function createMethodsKeyboard(methods) {
+    const buttons = methods.map((method) =>
+        Markup.button.callback(method.name, `method:${method.key}`)
+    );
+
+    return Markup.inlineKeyboard(buttons, { columns: 1 });
+}
+
 function createDatabasesKeyboard(databases) {
   const buttons = databases.map((db) =>
     Markup.button.callback(db.database, `database:${db.type}:${db.database}`)
@@ -101,4 +109,5 @@ function createPaginatedTablesKeyboard(
 module.exports = {
   createDatabasesKeyboard,
   createPaginatedTablesKeyboard,
+  createMethodsKeyboard,
 };
