@@ -16,6 +16,10 @@ const {
   watchesCommand,
   deactivateWatch,
 } = require("../commands/watchesCommand");
+const {
+  templateCommand,
+  handleTemplateSelection,
+} = require("../commands/templateCommand");
 
 const bot = new Telegraf(process.env.TELEGRAM_BOT_TOKEN);
 
@@ -41,16 +45,15 @@ bot.use(async (ctx, next) => {
 });
 bot.command("listen", listMethodsCommand);
 bot.command("watches", watchesCommand);
-bot.action(/unwatch:(.+):(.+)/, async (ctx) => {
+bot.action(/unwatch:(.+)/, async (ctx) => {
   try {
-    const database = ctx.match[1];
-    const table = ctx.match[2];
+    const _id = ctx.match[1];
     const userId = ctx.from.id;
 
-    await deactivateWatch(userId, database, table);
+    await deactivateWatch(userId, _id);
     await ctx.deleteMessage();
     await watchesCommand(ctx);
-    await ctx.answerCbQuery(`Stopped watching ${database}-${table}`);
+    await ctx.answerCbQuery(`Stopped watching`);
   } catch (error) {
     console.error("Unwatch error:", error);
     await ctx.answerCbQuery("Error stopping watch");
@@ -177,6 +180,19 @@ bot.action(/page:(.+):(.+):(\d+)/, async (ctx) => {
   } catch (error) {
     console.error("Navigation error:", error);
     await ctx.answerCbQuery("Error navigating pages");
+  }
+});
+
+bot.command("template", templateCommand);
+
+bot.action(/template:(.+)/, async (ctx) => {
+  try {
+    const templateId = ctx.match[1];
+    await handleTemplateSelection(ctx, templateId);
+    await ctx.answerCbQuery("Template applied");
+  } catch (error) {
+    console.error("Template selection error:", error);
+    await ctx.answerCbQuery("Error applying template");
   }
 });
 
