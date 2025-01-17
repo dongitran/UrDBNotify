@@ -5,6 +5,7 @@ Main Commands:
 • /start - Show welcome message
 • /login - Request access to the system
 • /listen - Select databases and tables to monitor
+• /template - Apply predefined table groups
 • /watches - View and manage your active watches
 • /help - Show this help message
 
@@ -15,17 +16,17 @@ How to use:
    • Once approved, you can start monitoring
 
 2. Monitoring Tables:
-   • Use /listen to see available databases
-   • Select a database to view its tables
-   • Choose tables you want to monitor
+   • Use /listen to select individual tables
+   • Or use /template for predefined groups
+   • Choose what you want to monitor
    • Confirm your selection
-   • Use /watches to manage your active watches
+   • Use /watches to manage active watches
 
 Notes:
-• Watch requests expire after 15 minutes
-• You'll receive notifications about changes in real-time
-• Use /listen to watch more tables
-• Messages are formatted in Markdown for better readability
+• Watch requests expire after 4 hours
+• Real-time change notifications
+• Messages formatted in Markdown
+• Use /template for quick setup
 
 ❓ Need help? Contact @dongtranthien for support.`;
 
