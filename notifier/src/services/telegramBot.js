@@ -16,6 +16,10 @@ const {
   watchesCommand,
   deactivateWatch,
 } = require("../commands/watchesCommand");
+const {
+  templateCommand,
+  handleTemplateSelection,
+} = require("../commands/templateCommand");
 
 const bot = new Telegraf(process.env.TELEGRAM_BOT_TOKEN);
 
@@ -176,6 +180,19 @@ bot.action(/page:(.+):(.+):(\d+)/, async (ctx) => {
   } catch (error) {
     console.error("Navigation error:", error);
     await ctx.answerCbQuery("Error navigating pages");
+  }
+});
+
+bot.command("template", templateCommand);
+
+bot.action(/template:(.+)/, async (ctx) => {
+  try {
+    const templateId = ctx.match[1];
+    await handleTemplateSelection(ctx, templateId);
+    await ctx.answerCbQuery("Template applied");
+  } catch (error) {
+    console.error("Template selection error:", error);
+    await ctx.answerCbQuery("Error applying template");
   }
 });
 
