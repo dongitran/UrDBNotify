@@ -130,6 +130,7 @@ async function processUserChanges(userId, watchedTables) {
           )}\n\`\`\`\n`;
         }
 
+        /*
         if (change.oldData) {
           locationMessage += `Old Data: \`\`\`json\n${JSON.stringify(
             change.oldData,
@@ -137,6 +138,7 @@ async function processUserChanges(userId, watchedTables) {
             2
           )}\n\`\`\`\n`;
         }
+        */
       });
 
       changeMessages.push(locationMessage);

@@ -21,7 +21,7 @@ Real-time database changes monitoring with Telegram notifications for PostgreSQL
 
 1. **Clone & Install:**
 ```bash
-git clone [repository-url]
+git clone https://github.com/dongitran/UrDBNotify.git
 cd collector && npm install
 cd ../notifier && npm install
 ```
