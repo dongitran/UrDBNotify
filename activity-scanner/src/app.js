@@ -19,7 +19,7 @@ async function start() {
 start();
 
 function startCleanupJob() {
-  schedule.scheduleJob("*/60 * * * * *", async () => {
+  schedule.scheduleJob("0 */2 * * * *", async () => {
     try {
       await scanTables();
     } catch (error) {
