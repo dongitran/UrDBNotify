@@ -4,6 +4,7 @@ const { insertTables, clearTables } = require("../models/activiyScanner");
 
 async function scanTables() {
     try {
+        console.log('scanTables');
         const { databaseMongo, databasePostgres } = parseConnections();
 
         const mongoPromises = databaseMongo.map((database) =>
@@ -19,6 +20,7 @@ async function scanTables() {
         await clearTables();
 
         await insertTables(tables.flat());
+        console.log('done');
     } catch (error) {
         console.error("Error scanning tables:", error);
     }
