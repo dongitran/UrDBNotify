@@ -4,6 +4,7 @@ const { insertTables, clearTables } = require("../models/activiyScanner");
 
 async function scanTables() {
     try {
+        console.log('scanTables');
         const { databaseMongo, databasePostgres } = parseConnections();
 
         const mongoPromises = databaseMongo.map((database) =>
@@ -19,6 +20,7 @@ async function scanTables() {
         await clearTables();
 
         await insertTables(tables.flat());
+        console.log('done');
     } catch (error) {
         console.error("Error scanning tables:", error);
     }
@@ -57,49 +59,59 @@ async function scanMongoDB(config) {
 }
 
 async function scanPostgres(config) {
-    const initPostgresTables = await getPostgresTables(config);
-    let tables = [];
-    const client = new Client(config);
+	const initPostgresTables = await getPostgresTables(config);
+	let tables = [];
+	const client = new Client(config);
 
-    try {
-        await client.connect();
+	try {
+			await client.connect();
 
-        for (const table of initPostgresTables) {
-            const result = await client.query(`
-                SELECT *
-                FROM ${table}
-                WHERE (
-                    EXISTS (
-                        SELECT 1
-                        FROM information_schema.columns
-                        WHERE table_name = '${table}' AND column_name = 'updated_at'
-                    ) AND updated_at >= NOW() - INTERVAL '8 hours'
-                    ) OR (
-                    EXISTS (
-                        SELECT 1
-                        FROM information_schema.columns
-                        WHERE table_name = '${table}' AND column_name = 'created_at'
-                    ) AND created_at >= NOW() - INTERVAL '8 hours'
-                    )
-                ORDER BY created_at DESC
-                    LIMIT 1
-            `);
+			for (const table of initPostgresTables) {
+					const checkColumnQuery = `
+							SELECT EXISTS (
+									SELECT 1
+									FROM information_schema.columns
+									WHERE table_name = '${table}' 
+									AND column_name = 'created_at'
+							) as has_updated_at;
+					`;
 
-            if (result) {
-                tables.push({
-                    table,
-                    type: "postgres",
-                    database: config.database,
-                });
-            }
-        }
-    } catch (error) {
-        console.error("Error scanning PostgreSQL tables:", error);
-    } finally {
-        await client.end();
-    }
+					const columnCheck = await client.query(checkColumnQuery);
+					
+					if (!columnCheck.rows[0].has_updated_at) {
+							continue;
+					}
 
-    return tables;
+					const query = `
+							SELECT EXISTS (
+									SELECT 1
+									FROM "${table}"
+									WHERE created_at >= NOW() - INTERVAL '8 hours'
+									LIMIT 1
+							) as has_recent_activity;
+					`;
+
+					try {
+							const result = await client.query(query);
+							if (result.rows[0].has_recent_activity) {
+									tables.push({
+											table,
+											type: "postgres",
+											database: config.database,
+									});
+							}
+					} catch (error) {
+							console.error(`Error scanning table ${table}:`, error.message);
+							continue;
+					}
+			}
+	} catch (error) {
+			console.error("Error scanning PostgreSQL tables:", error);
+	} finally {
+			await client.end();
+	}
+
+	return tables;
 }
 
 function getDatabaseConfig(databaseType, databaseName) {

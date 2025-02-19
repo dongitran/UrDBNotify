@@ -6,7 +6,7 @@ const {scanTables} = require("./services/scanTables");
 async function start() {
   try {
     await connectToMongoDB();
-    await scanTables();
+
     startCleanupJob();
 
     console.log("Successfully scan tables");
@@ -19,7 +19,7 @@ async function start() {
 start();
 
 function startCleanupJob() {
-  schedule.scheduleJob("*/15 * * * *", async () => {
+  schedule.scheduleJob("*/10 * * * * *", async () => {
     try {
       await scanTables();
     } catch (error) {
