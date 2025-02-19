@@ -19,7 +19,7 @@ async function connectToMongoDB() {
 
 async function setupCollections() {
   const activityScanners = db.collection(process.env.MONGO_ACTIVITY_SCANNER_COLLECTION);
-  await activityScanners.createIndex({ table: 1,}, { unique: true });
+  await activityScanners.createIndex({ table: 1,});
   await activityScanners.createIndex({ database: 1 });
   await activityScanners.createIndex({ timestamp: 1 });
   await activityScanners.createIndex({ type: 1 });
