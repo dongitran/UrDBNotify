@@ -1,6 +1,6 @@
-const { Telegraf, session} = require("telegraf");
+const { Telegraf, session } = require("telegraf");
 const { loginCommand } = require("../commands/loginCommand");
-const { listDatabasesCommand, listMethodsCommand} = require("../commands/listDatabasesCommand");
+const { listDatabasesCommand } = require("../commands/listDatabasesCommand");
 const { listTablesCommand } = require("../commands/listTablesCommand");
 const { startCommand } = require("../commands/startCommand");
 const { helpCommand } = require("../commands/helpCommand");
@@ -43,8 +43,21 @@ bot.use(async (ctx, next) => {
   }
   return next();
 });
-bot.command("listen", listMethodsCommand);
+
+bot.use(session());
+
+bot.command("listen_normal", async (ctx) => {
+  ctx.session = { method: "normal" };
+  await listDatabasesCommand(ctx);
+});
+
+bot.command("listen_smart", async (ctx) => {
+  ctx.session = { method: "smart" };
+  await listDatabasesCommand(ctx);
+});
+
 bot.command("watches", watchesCommand);
+
 bot.action(/unwatch:(.+)/, async (ctx) => {
   try {
     const _id = ctx.match[1];
@@ -59,9 +72,6 @@ bot.action(/unwatch:(.+)/, async (ctx) => {
     await ctx.answerCbQuery("Error stopping watch");
   }
 });
-bot.use(session());
-
-bot.command("listen", listMethodsCommand);
 
 bot.action(/database:(.+)/, async (ctx) => {
   try {
@@ -136,7 +146,7 @@ bot.action(/confirm:(.+):(.+)/, async (ctx) => {
     );
 
     await Promise.all(watchPromises);
-    const expiresIn = 240; // 4 hours
+    const expiresIn = 24; // 24 hours
 
     await ctx.telegram.editMessageText(
       ctx.chat.id,
@@ -144,8 +154,8 @@ bot.action(/confirm:(.+):(.+)/, async (ctx) => {
       null,
       `✅ Now watching ${selections.length} tables in ${database}:\n` +
         `${selections.join("\n")}\n\n` +
-        `Watch will expire in ${expiresIn} minutes.\n\n` +
-        `Use /listen to watch more tables.`
+        `Watch will expire in ${expiresIn} hours.\n\n` +
+        `Use /listen_normal or /listen_smart to watch more tables.`
     );
 
     await clearUserSelections(ctx.from.id, databaseType, database);
@@ -194,18 +204,6 @@ bot.action(/template:(.+)/, async (ctx) => {
     console.error("Template selection error:", error);
     await ctx.answerCbQuery("Error applying template");
   }
-});
-
-bot.action(/method:(.+)/, async (ctx) => {
-    ctx.session = { method: ctx.match[1] };
-
-    try {
-      const messageToEdit = ctx.callbackQuery.message.message_id;
-      await listDatabasesCommand(ctx,  messageToEdit);
-    } catch (error) {
-      console.error("Method selection error:", error);
-      await ctx.answerCbQuery("Error selecting method");
-    }
 });
 
 module.exports = {
