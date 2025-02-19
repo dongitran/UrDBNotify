@@ -1,5 +1,5 @@
-const { createDatabasesKeyboard, createMethodsKeyboard} = require("../utils/keyboards");
-const {getActivatedDatabases} = require("../models/activiyScanner");
+const { createDatabasesKeyboard } = require("../utils/keyboards");
+const { getActivatedDatabases } = require("../models/activiyScanner");
 
 function parseConnections() {
   const databases = [];
@@ -32,7 +32,7 @@ function parseConnections() {
 }
 
 async function listDatabasesCommand(ctx, messageToEdit = null) {
-  const method = ctx.match[1];
+  const method = ctx.session?.method || "normal";
 
   let databases = [];
   try {
@@ -71,13 +71,4 @@ async function listDatabasesCommand(ctx, messageToEdit = null) {
   }
 }
 
-async function listMethodsCommand(ctx) {
-     const keyboard = createMethodsKeyboard([
-       { name: "Normal list", key: "normal" },
-       { name: "Smart list", key: "smart" },
-     ]);
-
-    await ctx.reply("Select a method to watch:", keyboard);
-}
-
-module.exports = { listMethodsCommand, listDatabasesCommand };
+module.exports = { listDatabasesCommand };

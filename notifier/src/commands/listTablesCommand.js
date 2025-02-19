@@ -2,7 +2,7 @@ const { MongoClient } = require("mongodb");
 const { Client } = require("pg");
 const { createPaginatedTablesKeyboard } = require("../utils/keyboards");
 const { getUserSelections } = require("../services/userSelections");
-const {getTables, getActivatedTables} = require("../models/activiyScanner");
+const { getActivatedTables} = require("../models/activiyScanner");
 
 async function listTablesCommand(
   ctx,

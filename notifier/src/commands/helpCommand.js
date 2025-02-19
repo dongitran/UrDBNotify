@@ -4,7 +4,8 @@ async function helpCommand(ctx) {
 Main Commands:
 • /start - Show welcome message
 • /login - Request access to the system
-• /listen - Select databases and tables to monitor
+• /listen_normal - Select databases and tables to monitor (normal mode)
+• /listen_smart - Select databases and tables to monitor (smart mode)
 • /template - Apply predefined table groups
 • /watches - View and manage your active watches
 • /help - Show this help message
@@ -16,7 +17,7 @@ How to use:
    • Once approved, you can start monitoring
 
 2. Monitoring Tables:
-   • Use /listen to select individual tables
+   • Use /listen_normal or /listen_smart to select individual tables
    • Or use /template for predefined groups
    • Choose what you want to monitor
    • Confirm your selection
