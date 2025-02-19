@@ -72,7 +72,7 @@ async function scanPostgres(config) {
 									SELECT 1
 									FROM information_schema.columns
 									WHERE table_name = '${table}' 
-									AND column_name = 'updated_at'
+									AND column_name = 'created_at'
 							) as has_updated_at;
 					`;
 
@@ -86,7 +86,7 @@ async function scanPostgres(config) {
 							SELECT EXISTS (
 									SELECT 1
 									FROM "${table}"
-									WHERE updated_at >= NOW() - INTERVAL '8 hours'
+									WHERE created_at >= NOW() - INTERVAL '8 hours'
 									LIMIT 1
 							) as has_recent_activity;
 					`;
